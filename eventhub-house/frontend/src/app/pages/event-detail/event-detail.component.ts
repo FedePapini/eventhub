@@ -11,113 +11,205 @@ import { EventItem } from '../../models/event.model';
   standalone: true,
   imports: [NgIf, RouterLink],
   template: `
-    <div class="container page">
-      <a routerLink="/" class="back-link">← Torna agli eventi</a>
+    <section class="detail-page">
+      <div *ngIf="loading()" class="container page">
+        <p>Caricamento evento...</p>
+      </div>
 
-      <p *ngIf="loading()">Caricamento evento...</p>
+      <div *ngIf="error()" class="container page">
+        <p class="error-message">{{ error() }}</p>
+      </div>
 
-      <p *ngIf="error()" class="error-message">
-        {{ error() }}
-      </p>
+      <ng-container *ngIf="event() as currentEvent">
+        <div
+          class="event-cover"
+          [class.with-image]="currentEvent.image_url">
 
-      <section *ngIf="event() as currentEvent" class="event-layout">
-        <main class="card event-info">
-          <span class="badge">{{ currentEvent.category }}</span>
+          <img
+            *ngIf="currentEvent.image_url"
+            [src]="currentEvent.image_url"
+            [alt]="'Locandina evento ' + currentEvent.title">
 
-          <h1>{{ currentEvent.title }}</h1>
+          <div class="cover-overlay"></div>
 
-          <p class="location">
-            {{ currentEvent.location }} · {{ currentEvent.city }}
-          </p>
+          <div class="container cover-content">
+            <a routerLink="/" class="back-link">
+              ← Torna agli eventi
+            </a>
 
-          <div class="facts">
-            <div class="fact">
-              <span>DATA</span>
-              <strong>{{ formatDate(currentEvent.date) }}</strong>
-            </div>
+            <div class="title-area">
+              <span class="badge">{{ currentEvent.category }}</span>
 
-            <div class="fact">
-              <span>PREZZO</span>
-              <strong>{{ formatPrice(currentEvent.price) }}</strong>
-            </div>
+              <h1>{{ currentEvent.title }}</h1>
 
-            <div class="fact">
-              <span>POSTI DISPONIBILI</span>
-              <strong>
-                {{ currentEvent.available_places }} / {{ currentEvent.capacity }}
-              </strong>
+              <p>
+                {{ currentEvent.location }} · {{ currentEvent.city }}
+              </p>
             </div>
           </div>
+        </div>
 
-          <h2>Descrizione</h2>
-          <p class="description">{{ currentEvent.description }}</p>
-        </main>
+        <div class="container event-layout">
+          <main class="card event-info">
+            <h2>Informazioni evento</h2>
 
-        <aside class="card ticket-card">
-          <span class="small-label">BIGLIETTO</span>
+            <div class="facts">
+              <div class="fact">
+                <span>DATA E ORA</span>
+                <strong>{{ formatDate(currentEvent.date) }}</strong>
+              </div>
 
-          <strong class="price">
-            {{ formatPrice(currentEvent.price) }}
-          </strong>
+              <div class="fact">
+                <span>LOCATION</span>
+                <strong>{{ currentEvent.location }}, {{ currentEvent.city }}</strong>
+              </div>
 
-          <p class="availability">
-            Ancora
-            <strong>{{ currentEvent.available_places }}</strong>
-            posti disponibili.
-          </p>
+              <div class="fact">
+                <span>PREZZO</span>
+                <strong>{{ formatPrice(currentEvent.price) }}</strong>
+              </div>
 
-          <p *ngIf="bookingError()" class="error-message">
-            {{ bookingError() }}
-          </p>
+              <div class="fact">
+                <span>POSTI DISPONIBILI</span>
+                <strong>
+                  {{ currentEvent.available_places }} / {{ currentEvent.capacity }}
+                </strong>
+              </div>
+            </div>
 
-          <p *ngIf="bookingSuccess()" class="success-message">
-            {{ bookingSuccess() }}
-          </p>
+            <h2 class="description-title">Descrizione</h2>
+            <p class="description">
+              {{ currentEvent.description }}
+            </p>
+          </main>
 
-          <ng-container *ngIf="authService.isLoggedIn(); else loginRequired">
-            <button
-              type="button"
-              class="btn btn-primary booking-button"
-              [disabled]="bookingLoading() || currentEvent.available_places === 0"
-              (click)="bookEvent()">
-              {{
-                currentEvent.available_places === 0
-                  ? 'Posti esauriti'
-                  : bookingLoading()
-                    ? 'Prenotazione...'
-                    : 'Prenota ora'
-              }}
-            </button>
+          <aside class="card ticket-card">
+            <span class="small-label">BIGLIETTO</span>
 
-            <a routerLink="/biglietti" class="btn btn-outline booking-button">
-              I miei biglietti
-            </a>
-          </ng-container>
+            <strong class="price">
+              {{ formatPrice(currentEvent.price) }}
+            </strong>
 
-          <ng-template #loginRequired>
-            <a routerLink="/login" class="btn btn-primary booking-button">
-              Accedi per prenotare
-            </a>
-          </ng-template>
+            <p class="availability">
+              Ancora
+              <strong>{{ currentEvent.available_places }}</strong>
+              posti disponibili.
+            </p>
 
-          <div class="ticket-info">
-            <p>✓ Conferma immediata</p>
-            <p>✓ Biglietto digitale</p>
-            <p>✓ QR code personale</p>
-          </div>
-        </aside>
-      </section>
-    </div>
+            <p *ngIf="bookingError()" class="error-message">
+              {{ bookingError() }}
+            </p>
+
+            <p *ngIf="bookingSuccess()" class="success-message">
+              {{ bookingSuccess() }}
+            </p>
+
+            <ng-container *ngIf="authService.isLoggedIn(); else loginRequired">
+              <button
+                type="button"
+                class="btn btn-primary booking-button"
+                [disabled]="bookingLoading() || currentEvent.available_places === 0"
+                (click)="bookEvent()">
+                {{
+                  currentEvent.available_places === 0
+                    ? 'Posti esauriti'
+                    : bookingLoading()
+                      ? 'Prenotazione...'
+                      : 'Prenota ora'
+                }}
+              </button>
+
+              <a routerLink="/biglietti" class="btn btn-outline booking-button">
+                I miei biglietti
+              </a>
+            </ng-container>
+
+            <ng-template #loginRequired>
+              <a routerLink="/login" class="btn btn-primary booking-button">
+                Accedi per prenotare
+              </a>
+            </ng-template>
+
+            <div class="ticket-info">
+              <p>✓ Conferma immediata</p>
+              <p>✓ Biglietto digitale</p>
+              <p>✓ QR code personale</p>
+            </div>
+          </aside>
+        </div>
+      </ng-container>
+    </section>
   `,
   styles: [`
+    .detail-page {
+      padding-bottom: 85px;
+    }
+
+    .event-cover {
+      position: relative;
+      height: 490px;
+      overflow: hidden;
+      display: flex;
+      align-items: end;
+      background:
+        radial-gradient(circle at 74% 24%, rgba(252, 56, 172, .34), transparent 27%),
+        radial-gradient(circle at 24% 38%, rgba(147, 44, 255, .42), transparent 34%),
+        linear-gradient(130deg, #090910, #181024);
+    }
+
+    .event-cover img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, #08080c 0%, rgba(8, 8, 12, .58) 43%, rgba(8, 8, 12, .28) 100%);
+    }
+
+    .cover-content {
+      position: relative;
+      z-index: 1;
+      padding-bottom: 54px;
+    }
+
     .back-link {
       display: inline-block;
-      margin-bottom: 34px;
-      color: #fc38ac;
+      margin-bottom: 72px;
+      color: #f0eff8;
       font-weight: 600;
+      text-shadow: 0 1px 8px rgba(0,0,0,.45);
+    }
+
+    .back-link:hover {
+      color: #fc38ac;
+    }
+
+    .title-area h1 {
+      margin: 19px 0 12px;
+      max-width: 850px;
+      font-size: clamp(3rem, 7vw, 5rem);
+      line-height: .98;
+      text-shadow: 0 3px 18px rgba(0,0,0,.36);
+    }
+
+    .title-area p {
+      margin: 0;
+      color: #e0dfeb;
+      font-size: 1.15rem;
+      text-shadow: 0 2px 12px rgba(0,0,0,.42);
     }
 
     .event-layout {
+      position: relative;
+      z-index: 2;
+      margin-top: -20px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) 340px;
       gap: 25px;
@@ -128,25 +220,16 @@ import { EventItem } from '../../models/event.model';
       padding: 38px;
     }
 
-    h1 {
-      margin: 20px 0 10px;
-      font-size: clamp(2.8rem, 6vw, 4rem);
-      line-height: 1;
-    }
-
-    .location {
-      margin: 0 0 34px;
-      color: #a3a2b2;
-      font-size: 1.1rem;
+    .event-info h2 {
+      margin: 0 0 27px;
+      font-size: 1.65rem;
     }
 
     .facts {
       display: grid;
-      gap: 22px;
-      grid-template-columns: repeat(3, 1fr);
-      padding: 28px 0;
-      margin-bottom: 30px;
-      border-top: 1px solid rgba(255,255,255,.08);
+      grid-template-columns: repeat(2, 1fr);
+      gap: 29px;
+      padding-bottom: 32px;
       border-bottom: 1px solid rgba(255,255,255,.08);
     }
 
@@ -164,20 +247,24 @@ import { EventItem } from '../../models/event.model';
     }
 
     .fact strong {
-      overflow-wrap: anywhere;
+      line-height: 1.5;
     }
 
-    h2 {
-      margin: 0 0 15px;
+    .description-title {
+      margin-top: 33px !important;
+      margin-bottom: 16px !important;
     }
 
     .description {
       margin: 0;
       color: #b0afbd;
-      line-height: 1.75;
+      line-height: 1.8;
+      font-size: 1.02rem;
     }
 
     .ticket-card {
+      position: sticky;
+      top: 96px;
       padding: 30px;
     }
 
@@ -223,17 +310,39 @@ import { EventItem } from '../../models/event.model';
     }
 
     @media (max-width: 850px) {
+      .event-cover {
+        height: 420px;
+      }
+
+      .back-link {
+        margin-bottom: 55px;
+      }
+
       .event-layout {
         grid-template-columns: 1fr;
       }
 
       .ticket-card {
+        position: static;
         order: -1;
       }
     }
 
     @media (max-width: 600px) {
-      .event-info {
+      .event-cover {
+        height: 390px;
+      }
+
+      .cover-content {
+        padding-bottom: 38px;
+      }
+
+      .back-link {
+        margin-bottom: 42px;
+      }
+
+      .event-info,
+      .ticket-card {
         padding: 24px;
       }
 
@@ -302,9 +411,9 @@ export class EventDetailComponent implements OnInit {
         this.bookingLoading.set(false);
         this.loadEvent(currentEvent.id);
       },
-      error: (error) => {
+      error: (response) => {
         this.bookingError.set(
-          error.error?.message || 'Non è stato possibile completare la prenotazione.'
+          response.error?.message || 'Non è stato possibile completare la prenotazione.'
         );
         this.bookingLoading.set(false);
       }

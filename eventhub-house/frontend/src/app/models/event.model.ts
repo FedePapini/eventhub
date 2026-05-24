@@ -12,6 +12,7 @@ export interface EventItem {
   available_places: number;
   average_rating: number | null;
   image_filename: string | null;
+  image_url: string | null;
   organizer_id: number;
 }
 
