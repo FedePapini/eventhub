@@ -11,7 +11,11 @@ export class EventService {
 
   constructor(private http: HttpClient) {}
 
-  getEvents(filters?: { search?: string; category?: string; city?: string }): Observable<EventItem[]> {
+  getEvents(filters?: {
+    search?: string;
+    category?: string;
+    city?: string;
+  }): Observable<EventItem[]> {
     let params = new HttpParams();
 
     if (filters?.search) {
@@ -41,8 +45,8 @@ export class EventService {
     return this.http.post<EventItem>(this.apiUrl, formData);
   }
 
-  updateEvent(id: number, event: Partial<EventItem>): Observable<EventItem> {
-    return this.http.put<EventItem>(`${this.apiUrl}/${id}`, event);
+  updateEvent(id: number, formData: FormData): Observable<EventItem> {
+    return this.http.put<EventItem>(`${this.apiUrl}/${id}`, formData);
   }
 
   deleteEvent(id: number): Observable<{ message: string }> {

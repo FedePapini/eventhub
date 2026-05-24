@@ -7,6 +7,7 @@ import {
   OrganizerDashboardEvent,
   OrganizerService
 } from '../../core/services/organizer.service';
+import { EventService } from '../../core/services/event.service';
 
 @Component({
   selector: 'app-organizer-dashboard',
@@ -19,7 +20,7 @@ import {
           <div>
             <span class="eyebrow">ORGANIZER AREA</span>
             <h1>Dashboard <span class="gradient-text">eventi</span></h1>
-            <p>Controlla prenotazioni, incassi e partecipanti delle tue serate.</p>
+            <p>Controlla prenotazioni, incassi e gestione delle tue serate.</p>
           </div>
 
           <a routerLink="/organizer/nuovo-evento" class="btn btn-primary">
@@ -33,6 +34,10 @@ import {
 
         <p *ngIf="error()" class="error-message">
           {{ error() }}
+        </p>
+
+        <p *ngIf="success()" class="success-message">
+          {{ success() }}
         </p>
 
         <ng-container *ngIf="dashboard() as data">
@@ -60,7 +65,7 @@ import {
             <div class="panel-title">
               <div>
                 <h2>I tuoi eventi</h2>
-                <p>Statistiche e gestione iscritti.</p>
+                <p>Modifica, elimina o esporta i dati dei partecipanti.</p>
               </div>
             </div>
 
@@ -73,7 +78,7 @@ import {
                     <th>ISCRITTI</th>
                     <th>INCASSO</th>
                     <th>RATING</th>
-                    <th>AZIONI</th>
+                    <th>GESTIONE</th>
                   </tr>
                 </thead>
 
@@ -86,13 +91,9 @@ import {
 
                     <td>{{ formatDate(event.date) }}</td>
 
-                    <td>
-                      {{ event.enrolled }} / {{ event.capacity }}
-                    </td>
+                    <td>{{ event.enrolled }} / {{ event.capacity }}</td>
 
-                    <td>
-                      {{ formatPrice(event.estimated_revenue) }}
-                    </td>
+                    <td>{{ formatPrice(event.estimated_revenue) }}</td>
 
                     <td>
                       {{
@@ -103,6 +104,12 @@ import {
                     </td>
 
                     <td class="actions">
+                      <a
+                        class="action-button edit"
+                        [routerLink]="['/organizer/modifica-evento', event.id]">
+                        Modifica
+                      </a>
+
                       <button
                         type="button"
                         class="action-button"
@@ -115,6 +122,13 @@ import {
                         class="action-button csv"
                         (click)="downloadCsv(event)">
                         CSV
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-button delete"
+                        (click)="deleteEvent(event)">
+                        Elimina
                       </button>
                     </td>
                   </tr>
@@ -285,12 +299,12 @@ import {
 
     table {
       width: 100%;
-      min-width: 830px;
+      min-width: 1030px;
       border-collapse: collapse;
     }
 
     th {
-      padding: 18px 22px;
+      padding: 18px 18px;
       color: #898899;
       font-size: .68rem;
       font-weight: 700;
@@ -299,7 +313,7 @@ import {
     }
 
     td {
-      padding: 20px 22px;
+      padding: 20px 18px;
       color: #d0cfda;
       border-top: 1px solid rgba(255,255,255,.06);
     }
@@ -319,20 +333,33 @@ import {
     }
 
     .action-button {
-      padding: 8px 12px;
-      margin-right: 7px;
+      display: inline-flex;
+      margin: 3px 5px 3px 0;
+      padding: 8px 11px;
       border: 1px solid rgba(147,44,255,.4);
       border-radius: 999px;
       color: #d5a2ff;
       background: rgba(147,44,255,.12);
-      font-size: .84rem;
+      font-size: .82rem;
       font-weight: 600;
+    }
+
+    .action-button.edit {
+      color: #8ff4ff;
+      border-color: rgba(39,226,233,.38);
+      background: rgba(39,226,233,.1);
     }
 
     .action-button.csv {
       color: #ff98c9;
       border-color: rgba(252,56,172,.36);
       background: rgba(252,56,172,.1);
+    }
+
+    .action-button.delete {
+      color: #ff8fae;
+      border-color: rgba(211,41,94,.4);
+      background: rgba(211,41,94,.13);
     }
 
     .action-button:hover {
@@ -371,10 +398,6 @@ import {
       border-radius: 50%;
       color: #afafbd;
       background: transparent;
-    }
-
-    .attendees-list {
-      display: grid;
     }
 
     .attendee {
@@ -464,8 +487,12 @@ export class OrganizerDashboardComponent implements OnInit {
   loading = signal(true);
   attendeesLoading = signal(false);
   error = signal('');
+  success = signal('');
 
-  constructor(private organizerService: OrganizerService) {}
+  constructor(
+    private organizerService: OrganizerService,
+    private eventService: EventService
+  ) {}
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -480,10 +507,11 @@ export class OrganizerDashboardComponent implements OnInit {
         this.dashboard.set(dashboard);
         this.loading.set(false);
       },
-      error: (error) => {
+      error: (response) => {
         this.loading.set(false);
         this.error.set(
-          error.error?.message || 'Non è stato possibile caricare la dashboard organizer.'
+          response.error?.message ||
+          'Non è stato possibile caricare la dashboard organizer.'
         );
       }
     });
@@ -499,10 +527,11 @@ export class OrganizerDashboardComponent implements OnInit {
         this.attendees.set(response.attendees);
         this.attendeesLoading.set(false);
       },
-      error: (error) => {
+      error: (response) => {
         this.attendeesLoading.set(false);
         this.error.set(
-          error.error?.message || 'Non è stato possibile caricare gli iscritti.'
+          response.error?.message ||
+          'Non è stato possibile caricare gli iscritti.'
         );
       }
     });
@@ -525,9 +554,34 @@ export class OrganizerDashboardComponent implements OnInit {
 
         window.URL.revokeObjectURL(url);
       },
-      error: (error) => {
+      error: () => {
+        this.error.set('Non è stato possibile esportare il file CSV.');
+      }
+    });
+  }
+
+  deleteEvent(event: OrganizerDashboardEvent): void {
+    const confirmed = window.confirm(
+      `Vuoi davvero eliminare l evento "${event.title}"? Le prenotazioni collegate verranno eliminate.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.error.set('');
+    this.success.set('');
+
+    this.eventService.deleteEvent(event.id).subscribe({
+      next: () => {
+        this.closeAttendees();
+        this.success.set('Evento eliminato correttamente.');
+        this.loadDashboard();
+      },
+      error: (response) => {
         this.error.set(
-          error.error?.message || 'Non è stato possibile esportare il file CSV.'
+          response.error?.message ||
+          'Non è stato possibile eliminare l evento.'
         );
       }
     });

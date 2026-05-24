@@ -57,6 +57,12 @@ export const routes: Routes = [
     title: 'Crea Evento | EventHub House'
   },
   {
+    path: 'organizer/modifica-evento/:id',
+    component: EventFormComponent,
+    canActivate: [organizerGuard],
+    title: 'Modifica Evento | EventHub House'
+  },
+  {
     path: 'admin',
     component: AdminComponent,
     canActivate: [adminGuard],

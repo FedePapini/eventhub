@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../../core/services/event.service';
+import { EventItem } from '../../models/event.model';
 
 @Component({
   selector: 'app-event-form',
@@ -16,12 +17,34 @@ import { EventService } from '../../core/services/event.service';
         </a>
 
         <header class="page-heading">
-          <span class="eyebrow">NEW EVENT</span>
-          <h1>Crea un nuovo <span class="gradient-text">evento</span></h1>
-          <p>Pubblica una nuova serata house con locandina e informazioni complete.</p>
+          <span class="eyebrow">
+            {{ isEditMode() ? 'EDIT EVENT' : 'NEW EVENT' }}
+          </span>
+
+          <h1>
+            {{ isEditMode() ? 'Modifica il tuo' : 'Crea un nuovo' }}
+            <span class="gradient-text">evento</span>
+          </h1>
+
+          <p>
+            {{
+              isEditMode()
+                ? 'Aggiorna informazioni, biglietti o locandina della serata.'
+                : 'Pubblica una nuova serata house con locandina e informazioni complete.'
+            }}
+          </p>
         </header>
 
-        <form class="event-form card" [formGroup]="eventForm" (ngSubmit)="submitEvent()">
+        <p *ngIf="loading()" class="loading">
+          Caricamento evento...
+        </p>
+
+        <form
+          *ngIf="!loading()"
+          class="event-form card"
+          [formGroup]="eventForm"
+          (ngSubmit)="submitEvent()">
+
           <section class="form-section">
             <h2>Informazioni principali</h2>
 
@@ -104,7 +127,11 @@ import { EventService } from '../../core/services/event.service';
             <h2>Locandina evento</h2>
 
             <p class="section-note">
-              La locandina è facoltativa. Puoi caricare PNG, JPG, JPEG o WEBP.
+              {{
+                isEditMode()
+                  ? 'Carica una nuova immagine solo se vuoi sostituire la locandina attuale.'
+                  : 'La locandina è facoltativa. Puoi caricare PNG, JPG, JPEG o WEBP.'
+              }}
             </p>
 
             <label class="upload-box" for="image">
@@ -129,7 +156,7 @@ import { EventService } from '../../core/services/event.service';
             </label>
 
             <p class="selected-file" *ngIf="selectedFile() as file">
-              File selezionato: {{ file.name }}
+              Nuovo file selezionato: {{ file.name }}
             </p>
           </section>
 
@@ -150,7 +177,13 @@ import { EventService } from '../../core/services/event.service';
               type="submit"
               class="btn btn-primary"
               [disabled]="saving()">
-              {{ saving() ? 'Pubblicazione...' : 'Pubblica evento' }}
+              {{
+                saving()
+                  ? 'Salvataggio...'
+                  : isEditMode()
+                    ? 'Salva modifiche'
+                    : 'Pubblica evento'
+              }}
             </button>
           </div>
         </form>
@@ -189,6 +222,10 @@ import { EventService } from '../../core/services/event.service';
       font-size: 1.04rem;
     }
 
+    .loading {
+      color: #a3a2b2;
+    }
+
     .event-form {
       max-width: 850px;
       padding: 38px;
@@ -221,6 +258,7 @@ import { EventService } from '../../core/services/event.service';
 
     .upload-box {
       min-height: 285px;
+      position: relative;
       display: grid;
       place-items: center;
       overflow: hidden;
@@ -231,7 +269,6 @@ import { EventService } from '../../core/services/event.service';
       color: #d8cde2;
       background: rgba(147,44,255,.045);
       transition: border-color .2s, background .2s;
-      position: relative;
     }
 
     .upload-box:hover {
@@ -282,7 +319,7 @@ import { EventService } from '../../core/services/event.service';
       padding: 11px 18px;
       border-radius: 999px;
       color: white !important;
-      background: rgba(8,8,12,.78);
+      background: rgba(8,8,12,.8);
     }
 
     .selected-file {
@@ -323,9 +360,12 @@ import { EventService } from '../../core/services/event.service';
     }
   `]
 })
-export class EventFormComponent {
+export class EventFormComponent implements OnInit {
+  eventId = signal<number | null>(null);
+  isEditMode = signal(false);
   selectedFile = signal<File | null>(null);
   imagePreview = signal<string | null>(null);
+  loading = signal(false);
   saving = signal(false);
   error = signal('');
   success = signal('');
@@ -342,9 +382,46 @@ export class EventFormComponent {
   });
 
   constructor(
+    private route: ActivatedRoute,
     private eventService: EventService,
     private router: Router
   ) {}
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+
+    if (id) {
+      this.eventId.set(id);
+      this.isEditMode.set(true);
+      this.loadEvent(id);
+    }
+  }
+
+  loadEvent(id: number): void {
+    this.loading.set(true);
+
+    this.eventService.getEvent(id).subscribe({
+      next: (event) => {
+        this.eventForm.patchValue({
+          title: event.title,
+          description: event.description,
+          category: event.category,
+          city: event.city,
+          location: event.location,
+          date: this.dateForInput(event.date),
+          price: event.price,
+          capacity: event.capacity
+        });
+
+        this.imagePreview.set(event.image_url);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Non è stato possibile caricare l evento da modificare.');
+        this.loading.set(false);
+      }
+    });
+  }
 
   onFileSelected(event: globalThis.Event): void {
     const input = event.target as HTMLInputElement;
@@ -352,7 +429,6 @@ export class EventFormComponent {
 
     this.error.set('');
     this.selectedFile.set(file);
-    this.imagePreview.set(null);
 
     if (!file) {
       return;
@@ -453,19 +529,33 @@ export class EventFormComponent {
 
     this.saving.set(true);
 
-    this.eventService.createEvent(formData).subscribe({
-      next: (createdEvent) => {
-        this.success.set('Evento pubblicato correttamente.');
+    const id = this.eventId();
+
+    const request = this.isEditMode() && id
+      ? this.eventService.updateEvent(id, formData)
+      : this.eventService.createEvent(formData);
+
+    request.subscribe({
+      next: (event: EventItem) => {
         this.saving.set(false);
-        this.router.navigate(['/eventi', createdEvent.id]);
+        this.router.navigate(['/eventi', event.id]);
       },
       error: (response) => {
         this.saving.set(false);
         this.error.set(
           response.error?.message ||
-          'Non è stato possibile pubblicare l evento. Controlla che il backend sia acceso.'
+          'Non è stato possibile salvare l evento.'
         );
       }
     });
+  }
+
+  dateForInput(date: string): string {
+    const parsedDate = new Date(date);
+    const offset = parsedDate.getTimezoneOffset() * 60000;
+
+    return new Date(parsedDate.getTime() - offset)
+      .toISOString()
+      .slice(0, 16);
   }
 }
