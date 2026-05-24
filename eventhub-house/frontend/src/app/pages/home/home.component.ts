@@ -25,7 +25,7 @@ import { EventItem } from '../../models/event.model';
 
           <p>
             Vivi le migliori notti house, deep house e tech house
-            nelle location più esclusive d'Italia.
+            nelle location più esclusive d'Europa.
           </p>
 
           <div class="hero-buttons">
