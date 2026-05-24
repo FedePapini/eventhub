@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from werkzeug.utils import secure_filename
 from app.extensions import db
-from app.models import Event, Booking, Review
+from app.models import Event, Booking, Review, Artist
 from app.utils import role_required, parse_date
 
 events_bp = Blueprint("events", __name__)
@@ -46,6 +46,49 @@ def save_uploaded_image(image):
     return unique_filename
 
 
+def artist_to_dict(artist):
+    return {
+        "id": artist.id,
+        "name": artist.name,
+        "bio": artist.bio,
+        "image_filename": artist.image_filename,
+        "image_url": (
+            f"/api/artists/images/{artist.image_filename}"
+            if artist.image_filename
+            else None
+        )
+    }
+
+
+def parse_artist_ids():
+    raw_value = request.form.get("artist_ids", "")
+
+    if not raw_value:
+        return []
+
+    ids = []
+
+    for item in raw_value.split(","):
+        item = item.strip()
+
+        if item:
+            try:
+                ids.append(int(item))
+            except ValueError:
+                pass
+
+    return ids
+
+
+def assign_artists_to_event(event, artist_ids):
+    if not artist_ids:
+        event.artists = []
+        return
+
+    artists = Artist.query.filter(Artist.id.in_(artist_ids)).all()
+    event.artists = artists
+
+
 def event_to_dict(event):
     return {
         "id": event.id,
@@ -66,7 +109,8 @@ def event_to_dict(event):
             if event.image_filename
             else None
         ),
-        "organizer_id": event.organizer_id
+        "organizer_id": event.organizer_id,
+        "artists": [artist_to_dict(artist) for artist in event.artists]
     }
 
 
@@ -79,12 +123,6 @@ def can_manage_event(event):
 
 @events_bp.get("")
 def list_events():
-    """
-    Lista eventi con filtri
-    ---
-    tags:
-      - Events
-    """
     query = Event.query
 
     search = request.args.get("search", "").strip()
@@ -126,12 +164,6 @@ def get_event(event_id):
 @jwt_required()
 @role_required("organizer", "admin")
 def create_event():
-    """
-    Crea evento con locandina
-    ---
-    tags:
-      - Events
-    """
     title = request.form.get("title", "").strip()
     description = request.form.get("description", "").strip()
     category = request.form.get("category", "House").strip()
@@ -175,6 +207,8 @@ def create_event():
         organizer_id=int(get_jwt_identity())
     )
 
+    assign_artists_to_event(event, parse_artist_ids())
+
     db.session.add(event)
     db.session.commit()
 
@@ -216,6 +250,8 @@ def update_event(event_id):
         except ValueError as error:
             return jsonify({"message": str(error)}), 400
 
+    assign_artists_to_event(event, parse_artist_ids())
+
     db.session.commit()
 
     return jsonify(event_to_dict(event))
@@ -229,6 +265,8 @@ def delete_event(event_id):
 
     if not can_manage_event(event):
         return jsonify({"message": "Non puoi eliminare questo evento"}), 403
+
+    event.artists = []
 
     Booking.query.filter_by(event_id=event.id).delete()
     Review.query.filter_by(event_id=event.id).delete()

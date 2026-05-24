@@ -3,6 +3,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
 
 
+event_artists = db.Table(
+    "event_artists",
+    db.Column("event_id", db.Integer, db.ForeignKey("event.id"), primary_key=True),
+    db.Column("artist_id", db.Integer, db.ForeignKey("artist.id"), primary_key=True)
+)
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -22,6 +29,14 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
 
+class Artist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(160), nullable=False)
+    bio = db.Column(db.Text, default="")
+    image_filename = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(180), nullable=False)
@@ -38,6 +53,13 @@ class Event(db.Model):
 
     organizer = db.relationship("User", backref="organized_events")
 
+    artists = db.relationship(
+        "Artist",
+        secondary=event_artists,
+        backref=db.backref("events", lazy="dynamic"),
+        lazy="select"
+    )
+
     @property
     def booked_count(self):
         return Booking.query.filter_by(event_id=self.id).count()
@@ -49,9 +71,11 @@ class Event(db.Model):
     @property
     def average_rating(self):
         reviews = Review.query.filter_by(event_id=self.id, is_reported=False).all()
+
         if not reviews:
             return None
-        return round(sum(r.rating for r in reviews) / len(reviews), 1)
+
+        return round(sum(review.rating for review in reviews) / len(reviews), 1)
 
 
 class Booking(db.Model):

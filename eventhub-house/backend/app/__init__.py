@@ -32,6 +32,7 @@ def create_app(test_config=None):
     from app.routes.reviews import reviews_bp
     from app.routes.admin import admin_bp
     from app.routes.organizer import organizer_bp
+    from app.routes.artists import artists_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(events_bp, url_prefix="/api/events")
@@ -39,6 +40,7 @@ def create_app(test_config=None):
     app.register_blueprint(reviews_bp, url_prefix="/api/reviews")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(organizer_bp, url_prefix="/api/organizer")
+    app.register_blueprint(artists_bp, url_prefix="/api/artists")
 
     @app.route("/")
     def home():

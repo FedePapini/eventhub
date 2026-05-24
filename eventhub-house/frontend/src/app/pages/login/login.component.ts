@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,116 +12,138 @@ import { AuthService } from '../../core/services/auth.service';
     <section class="auth-page">
       <div class="auth-card card">
         <span class="eyebrow">WELCOME BACK</span>
-        <h1>Accedi a <span class="gradient-text">EventHub</span></h1>
-        <p class="subtitle">Entra e gestisci eventi, biglietti e recensioni.</p>
+
+        <h1>
+          Accedi a <span class="gradient-text">EventHub</span>
+        </h1>
+
+        <p class="subtitle">
+          Entra nel tuo account per gestire eventi, biglietti e recensioni.
+        </p>
 
         <form [formGroup]="loginForm" (ngSubmit)="submit()">
           <div class="field">
             <label for="email">Email</label>
-            <input id="email" type="email" formControlName="email" placeholder="nome@email.com">
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="nome@email.com">
           </div>
 
           <div class="field">
             <label for="password">Password</label>
-            <input id="password" type="password" formControlName="password" placeholder="Inserisci password">
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="Inserisci la password">
           </div>
 
-          <p class="error-message" *ngIf="error">{{ error }}</p>
+          <p class="error-message" *ngIf="error()">
+            {{ error() }}
+          </p>
 
-          <button class="btn btn-primary submit" type="submit" [disabled]="loading">
-            {{ loading ? 'Accesso...' : 'Accedi' }}
+          <button
+            class="btn btn-primary submit-button"
+            type="submit"
+            [disabled]="loading()">
+            {{ loading() ? 'Accesso in corso...' : 'Accedi' }}
           </button>
         </form>
 
-        <div class="demo-box">
-          <strong>Account demo</strong>
-          <p>User: user&#64;eventhub.local / password</p>
-          <p>Organizer: organizer&#64;eventhub.local / password</p>
-          <p>Admin: admin&#64;eventhub.local / password</p>
+        <div class="separator">
+          <span>NON HAI ANCORA UN ACCOUNT?</span>
         </div>
 
-        <p class="register-link">
-          Non hai un account?
-          <a routerLink="/register">Registrati</a>
-        </p>
+        <a routerLink="/register" class="btn btn-outline register-button">
+          Crea un account
+        </a>
       </div>
     </section>
   `,
   styles: [`
     .auth-page {
       min-height: calc(100vh - 150px);
-      padding: 55px 18px;
+      padding: 58px 18px;
       display: grid;
       place-items: center;
       background:
-        radial-gradient(circle at 50% 20%, rgba(147,44,255,.16), transparent 35%),
+        radial-gradient(circle at 50% 16%, rgba(147,44,255,.19), transparent 36%),
+        radial-gradient(circle at 75% 72%, rgba(252,56,172,.1), transparent 28%),
         #08080c;
     }
 
     .auth-card {
       width: min(475px, 100%);
-      padding: 42px;
-      box-shadow: 0 22px 80px rgba(147,44,255,.12);
+      padding: 43px;
+      box-shadow: 0 22px 85px rgba(147,44,255,.13);
     }
 
     .eyebrow {
       display: block;
+      margin-bottom: 17px;
       color: #c26eff;
-      letter-spacing: 3px;
       font-size: .73rem;
       font-weight: 700;
-      margin-bottom: 17px;
+      letter-spacing: 3px;
     }
 
     h1 {
-      margin: 0 0 12px;
-      font-size: 2.35rem;
+      margin: 0 0 13px;
+      font-size: clamp(2.1rem, 6vw, 2.45rem);
     }
 
     .subtitle {
-      margin: 0 0 32px;
-      color: #9696a8;
-      line-height: 1.6;
+      margin: 0 0 34px;
+      color: #9998aa;
+      line-height: 1.7;
     }
 
-    .submit {
+    .submit-button {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 10px;
       border: 0;
     }
 
-    .submit:disabled {
-      opacity: .65;
+    .submit-button:disabled {
+      opacity: .62;
+      cursor: not-allowed;
+      transform: none;
     }
 
-    .demo-box {
-      margin-top: 28px;
-      padding: 17px;
-      border-radius: 14px;
-      color: #b2b2c0;
-      font-size: .88rem;
-      background: rgba(255,255,255,.04);
-    }
-
-    .demo-box p {
-      margin: 9px 0 0;
-    }
-
-    .register-link {
-      margin: 27px 0 0;
+    .separator {
+      position: relative;
+      margin: 34px 0 25px;
       text-align: center;
-      color: #9696a8;
+      border-top: 1px solid rgba(255,255,255,.09);
     }
 
-    .register-link a {
-      color: #fc38ac;
+    .separator span {
+      position: relative;
+      top: -9px;
+      padding: 0 14px;
+      color: #898899;
+      background: #111118;
+      font-size: .67rem;
       font-weight: 700;
+      letter-spacing: 1.7px;
+    }
+
+    .register-button {
+      width: 100%;
+    }
+
+    @media (max-width: 520px) {
+      .auth-card {
+        padding: 28px 23px;
+      }
     }
   `]
 })
 export class LoginComponent {
-  error = '';
-  loading = false;
+  loading = signal(false);
+  error = signal('');
 
   loginForm = new FormGroup({
     email: new FormControl('', {
@@ -140,27 +162,36 @@ export class LoginComponent {
   ) {}
 
   submit(): void {
+    this.error.set('');
+
     if (this.loginForm.invalid) {
-      this.error = 'Inserisci email e password valide.';
+      this.error.set('Inserisci email e password valide.');
       return;
     }
 
-    this.error = '';
-    this.loading = true;
+    this.loading.set(true);
 
     this.authService.login(this.loginForm.getRawValue()).subscribe({
       next: (response) => {
+        this.loading.set(false);
+
         if (response.user.role === 'admin') {
           this.router.navigate(['/admin']);
-        } else if (response.user.role === 'organizer') {
-          this.router.navigate(['/organizer']);
-        } else {
-          this.router.navigate(['/']);
+          return;
         }
+
+        if (response.user.role === 'organizer') {
+          this.router.navigate(['/organizer']);
+          return;
+        }
+
+        this.router.navigate(['/']);
       },
-      error: (error) => {
-        this.error = error.error?.message || 'Accesso non riuscito.';
-        this.loading = false;
+      error: (response) => {
+        this.loading.set(false);
+        this.error.set(
+          response.error?.message || 'Accesso non riuscito.'
+        );
       }
     });
   }
