@@ -1,3 +1,5 @@
+import { Artist } from './artist.model';
+
 export interface EventItem {
   id: number;
   title: string;
@@ -14,6 +16,7 @@ export interface EventItem {
   image_filename: string | null;
   image_url: string | null;
   organizer_id: number;
+  artists: Artist[];
 }
 
 export interface Ticket {

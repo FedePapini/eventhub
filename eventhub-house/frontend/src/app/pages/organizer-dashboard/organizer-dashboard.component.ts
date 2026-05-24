@@ -20,12 +20,18 @@ import { EventService } from '../../core/services/event.service';
           <div>
             <span class="eyebrow">ORGANIZER AREA</span>
             <h1>Dashboard <span class="gradient-text">eventi</span></h1>
-            <p>Controlla prenotazioni, incassi e gestione delle tue serate.</p>
+            <p>Controlla prenotazioni, incassi, lineup e gestione delle tue serate.</p>
           </div>
 
-          <a routerLink="/organizer/nuovo-evento" class="btn btn-primary">
-            + Crea evento
-          </a>
+          <div class="header-actions">
+            <a routerLink="/organizer/artisti" class="btn btn-outline">
+              Gestisci artisti
+            </a>
+
+            <a routerLink="/organizer/nuovo-evento" class="btn btn-primary">
+              + Crea evento
+            </a>
+          </div>
         </header>
 
         <p *ngIf="loading()" class="loading">
@@ -207,6 +213,16 @@ import { EventService } from '../../core/services/event.service';
       margin-bottom: 42px;
     }
 
+    .header-actions {
+      display: flex;
+      gap: 13px;
+      flex-shrink: 0;
+    }
+
+    .header-actions .btn-primary {
+      border: 0;
+    }
+
     .eyebrow {
       display: block;
       margin-bottom: 16px;
@@ -230,11 +246,6 @@ import { EventService } from '../../core/services/event.service';
       margin: 0;
       color: #a3a2b2;
       font-size: 1.04rem;
-    }
-
-    .page-header .btn {
-      border: 0;
-      white-space: nowrap;
     }
 
     .loading {
@@ -304,7 +315,7 @@ import { EventService } from '../../core/services/event.service';
     }
 
     th {
-      padding: 18px 18px;
+      padding: 18px;
       color: #898899;
       font-size: .68rem;
       font-weight: 700;
@@ -456,13 +467,14 @@ import { EventService } from '../../core/services/event.service';
       border-top: 1px solid rgba(255,255,255,.08);
     }
 
-    @media (max-width: 850px) {
+    @media (max-width: 900px) {
       .page-header {
         display: block;
       }
 
-      .page-header .btn {
-        margin-top: 27px;
+      .header-actions {
+        margin-top: 28px;
+        flex-wrap: wrap;
       }
 
       .stats-grid {
@@ -476,6 +488,12 @@ import { EventService } from '../../core/services/event.service';
       .ticket-code {
         margin-top: 17px;
         text-align: left;
+      }
+    }
+
+    @media (max-width: 530px) {
+      .header-actions {
+        display: grid;
       }
     }
   `]

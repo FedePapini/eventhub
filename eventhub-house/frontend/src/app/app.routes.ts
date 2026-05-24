@@ -7,6 +7,8 @@ import { TicketsComponent } from './pages/tickets/tickets.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { OrganizerDashboardComponent } from './pages/organizer-dashboard/organizer-dashboard.component';
 import { EventFormComponent } from './pages/event-form/event-form.component';
+import { ArtistsManagerComponent } from './pages/artists-manager/artists-manager.component';
+import { ArtistDetailComponent } from './pages/artist-detail/artist-detail.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard, organizerGuard } from './core/guards/role.guard';
@@ -31,6 +33,11 @@ export const routes: Routes = [
     path: 'eventi/:id',
     component: EventDetailComponent,
     title: 'Evento | EventHub House'
+  },
+  {
+    path: 'artisti/:id',
+    component: ArtistDetailComponent,
+    title: 'Artista | EventHub House'
   },
   {
     path: 'biglietti',
@@ -61,6 +68,12 @@ export const routes: Routes = [
     component: EventFormComponent,
     canActivate: [organizerGuard],
     title: 'Modifica Evento | EventHub House'
+  },
+  {
+    path: 'organizer/artisti',
+    component: ArtistsManagerComponent,
+    canActivate: [organizerGuard],
+    title: 'Gestione Artisti | EventHub House'
   },
   {
     path: 'admin',

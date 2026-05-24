@@ -1,14 +1,16 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EventService } from '../../core/services/event.service';
+import { ArtistService } from '../../core/services/artist.service';
 import { EventItem } from '../../models/event.model';
+import { Artist } from '../../models/artist.model';
 
 @Component({
   selector: 'app-event-form',
   standalone: true,
-  imports: [NgIf, ReactiveFormsModule, RouterLink],
+  imports: [NgIf, NgFor, ReactiveFormsModule, RouterLink],
   template: `
     <section class="event-form-page page">
       <div class="container">
@@ -29,8 +31,8 @@ import { EventItem } from '../../models/event.model';
           <p>
             {{
               isEditMode()
-                ? 'Aggiorna informazioni, biglietti o locandina della serata.'
-                : 'Pubblica una nuova serata house con locandina e informazioni complete.'
+                ? 'Aggiorna informazioni, locandina e lineup della serata.'
+                : 'Pubblica una nuova serata house con locandina e artisti in lineup.'
             }}
           </p>
         </header>
@@ -81,6 +83,60 @@ import { EventItem } from '../../models/event.model';
                 <label for="date">Data e ora *</label>
                 <input id="date" type="datetime-local" formControlName="date">
               </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <div class="section-heading-row">
+              <div>
+                <h2>Lineup</h2>
+                <p class="section-note">
+                  Seleziona gli artisti che suoneranno durante l'evento.
+                </p>
+              </div>
+
+              <a routerLink="/organizer/artisti" class="manage-artists">
+                + Gestisci artisti
+              </a>
+            </div>
+
+            <p class="loading" *ngIf="artistsLoading()">
+              Caricamento artisti...
+            </p>
+
+            <div class="artists-selection" *ngIf="!artistsLoading() && artists().length > 0">
+              <label
+                class="artist-choice"
+                [class.selected]="isArtistSelected(artist.id)"
+                *ngFor="let artist of artists()">
+
+                <input
+                  type="checkbox"
+                  [checked]="isArtistSelected(artist.id)"
+                  (change)="toggleArtist(artist.id, $event)">
+
+                <div class="artist-photo">
+                  <img
+                    *ngIf="artist.image_url; else fallbackArtist"
+                    [src]="artist.image_url"
+                    [alt]="'Foto di ' + artist.name">
+
+                  <ng-template #fallbackArtist>
+                    <div class="fallback-artist">
+                      {{ artist.name.charAt(0).toUpperCase() }}
+                    </div>
+                  </ng-template>
+                </div>
+
+                <strong>{{ artist.name }}</strong>
+              </label>
+            </div>
+
+            <div class="empty-artists" *ngIf="!artistsLoading() && artists().length === 0">
+              <p>Non hai ancora artisti disponibili per la lineup.</p>
+              <a routerLink="/organizer/artisti" class="btn btn-outline">
+                Crea il primo artista
+              </a>
             </div>
           </section>
 
@@ -164,10 +220,6 @@ import { EventItem } from '../../models/event.model';
             {{ error() }}
           </p>
 
-          <p class="success-message" *ngIf="success()">
-            {{ success() }}
-          </p>
-
           <div class="form-actions">
             <a routerLink="/organizer" class="btn btn-outline">
               Annulla
@@ -227,7 +279,7 @@ import { EventItem } from '../../models/event.model';
     }
 
     .event-form {
-      max-width: 850px;
+      max-width: 900px;
       padding: 38px;
     }
 
@@ -250,10 +302,118 @@ import { EventItem } from '../../models/event.model';
       color: #9291a3;
     }
 
+    .section-heading-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .section-heading-row h2 {
+      margin-bottom: 22px;
+    }
+
+    .section-heading-row .section-note {
+      margin-bottom: 0;
+    }
+
+    .manage-artists {
+      padding: 11px 17px;
+      border-radius: 999px;
+      border: 1px solid rgba(147,44,255,.4);
+      color: #d5a2ff;
+      background: rgba(147,44,255,.12);
+      font-size: .9rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
     .fields-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 0 18px;
+    }
+
+    .artists-selection {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .artist-choice {
+      position: relative;
+      display: grid;
+      gap: 13px;
+      justify-items: center;
+      padding: 18px 12px;
+      border-radius: 18px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.018);
+      transition: border-color .2s, background .2s, transform .2s;
+      text-align: center;
+    }
+
+    .artist-choice:hover {
+      transform: translateY(-2px);
+      border-color: rgba(147,44,255,.42);
+    }
+
+    .artist-choice.selected {
+      border-color: #fc38ac;
+      background: rgba(252,56,172,.09);
+      box-shadow: inset 0 0 0 1px rgba(252,56,172,.18);
+    }
+
+    .artist-choice input {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      accent-color: #fc38ac;
+    }
+
+    .artist-photo {
+      width: 82px;
+      height: 82px;
+      overflow: hidden;
+      border-radius: 50%;
+      border: 2px solid rgba(147,44,255,.4);
+    }
+
+    .artist-choice.selected .artist-photo {
+      border-color: #fc38ac;
+    }
+
+    .artist-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .fallback-artist {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-size: 1.9rem;
+      background: linear-gradient(135deg, #932cff, #fc38ac);
+    }
+
+    .artist-choice strong {
+      font-size: .9rem;
+    }
+
+    .empty-artists {
+      padding: 32px;
+      border-radius: 16px;
+      text-align: center;
+      color: #9998a9;
+      background: rgba(255,255,255,.025);
+    }
+
+    .empty-artists p {
+      margin: 0 0 21px;
     }
 
     .upload-box {
@@ -345,6 +505,21 @@ import { EventItem } from '../../models/event.model';
       transform: none;
     }
 
+    @media (max-width: 780px) {
+      .artists-selection {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .section-heading-row {
+        display: block;
+      }
+
+      .manage-artists {
+        display: inline-flex;
+        margin-top: 21px;
+      }
+    }
+
     @media (max-width: 650px) {
       .event-form {
         padding: 24px;
@@ -363,12 +538,14 @@ import { EventItem } from '../../models/event.model';
 export class EventFormComponent implements OnInit {
   eventId = signal<number | null>(null);
   isEditMode = signal(false);
+  artists = signal<Artist[]>([]);
+  selectedArtistIds = signal<number[]>([]);
+  artistsLoading = signal(true);
   selectedFile = signal<File | null>(null);
   imagePreview = signal<string | null>(null);
   loading = signal(false);
   saving = signal(false);
   error = signal('');
-  success = signal('');
 
   eventForm = new FormGroup({
     title: new FormControl('', { nonNullable: true }),
@@ -384,10 +561,13 @@ export class EventFormComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
+    private artistService: ArtistService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.loadArtists();
+
     const id = Number(this.route.snapshot.paramMap.get('id'));
 
     if (id) {
@@ -395,6 +575,19 @@ export class EventFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.loadEvent(id);
     }
+  }
+
+  loadArtists(): void {
+    this.artistService.getArtists().subscribe({
+      next: (artists) => {
+        this.artists.set(artists);
+        this.artistsLoading.set(false);
+      },
+      error: () => {
+        this.artistsLoading.set(false);
+        this.error.set('Non è stato possibile caricare gli artisti.');
+      }
+    });
   }
 
   loadEvent(id: number): void {
@@ -413,6 +606,10 @@ export class EventFormComponent implements OnInit {
           capacity: event.capacity
         });
 
+        this.selectedArtistIds.set(
+          (event.artists || []).map((artist) => artist.id)
+        );
+
         this.imagePreview.set(event.image_url);
         this.loading.set(false);
       },
@@ -421,6 +618,26 @@ export class EventFormComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  isArtistSelected(artistId: number): boolean {
+    return this.selectedArtistIds().includes(artistId);
+  }
+
+  toggleArtist(artistId: number, event: globalThis.Event): void {
+    const checkbox = event.target as HTMLInputElement;
+
+    if (checkbox.checked) {
+      if (!this.isArtistSelected(artistId)) {
+        this.selectedArtistIds.update((ids) => [...ids, artistId]);
+      }
+
+      return;
+    }
+
+    this.selectedArtistIds.update(
+      (ids) => ids.filter((id) => id !== artistId)
+    );
   }
 
   onFileSelected(event: globalThis.Event): void {
@@ -434,9 +651,7 @@ export class EventFormComponent implements OnInit {
       return;
     }
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
       this.error.set('Formato immagine non valido. Usa PNG, JPG, JPEG o WEBP.');
       this.selectedFile.set(null);
       input.value = '';
@@ -454,7 +669,6 @@ export class EventFormComponent implements OnInit {
 
   submitEvent(): void {
     this.error.set('');
-    this.success.set('');
 
     const values = this.eventForm.getRawValue();
 
@@ -494,9 +708,7 @@ export class EventFormComponent implements OnInit {
     }
 
     if (missingFields.length > 0) {
-      this.error.set(
-        `Compila i seguenti campi: ${missingFields.join(', ')}.`
-      );
+      this.error.set(`Compila i seguenti campi: ${missingFields.join(', ')}.`);
       return;
     }
 
@@ -520,6 +732,7 @@ export class EventFormComponent implements OnInit {
     formData.append('date', date);
     formData.append('price', String(price));
     formData.append('capacity', String(capacity));
+    formData.append('artist_ids', this.selectedArtistIds().join(','));
 
     const image = this.selectedFile();
 
@@ -543,8 +756,7 @@ export class EventFormComponent implements OnInit {
       error: (response) => {
         this.saving.set(false);
         this.error.set(
-          response.error?.message ||
-          'Non è stato possibile salvare l evento.'
+          response.error?.message || 'Non è stato possibile salvare l evento.'
         );
       }
     });

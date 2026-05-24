@@ -77,6 +77,40 @@ import { EventItem, Review } from '../../models/event.model';
                 </div>
               </div>
 
+              <section
+                class="lineup-section"
+                *ngIf="currentEvent.artists && currentEvent.artists.length > 0">
+
+                <div class="lineup-heading">
+                  <span>LINEUP</span>
+                  <h2>Artisti</h2>
+                </div>
+
+                <div class="lineup-grid">
+                  <a
+                    class="lineup-artist"
+                    *ngFor="let artist of currentEvent.artists"
+                    [routerLink]="['/artisti', artist.id]">
+
+                    <div class="artist-circle">
+                      <img
+                        *ngIf="artist.image_url; else artistFallback"
+                        [src]="artist.image_url"
+                        [alt]="'Foto di ' + artist.name">
+
+                      <ng-template #artistFallback>
+                        <div class="artist-fallback">
+                          {{ artist.name.charAt(0).toUpperCase() }}
+                        </div>
+                      </ng-template>
+                    </div>
+
+                    <strong>{{ artist.name }}</strong>
+                    <small>Vedi artista →</small>
+                  </a>
+                </div>
+              </section>
+
               <h2 class="description-title">Descrizione</h2>
               <p class="description">
                 {{ currentEvent.description }}
@@ -136,11 +170,7 @@ import { EventItem, Review } from '../../models/event.model';
                     type="submit"
                     class="btn btn-primary publish-button"
                     [disabled]="reviewSaving()">
-                    {{
-                      reviewSaving()
-                        ? 'Pubblicazione...'
-                        : 'Pubblica recensione'
-                    }}
+                    {{ reviewSaving() ? 'Pubblicazione...' : 'Pubblica recensione' }}
                   </button>
                 </form>
               </section>
@@ -285,12 +315,7 @@ import { EventItem, Review } from '../../models/event.model';
     .cover-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to top,
-        #08080c 0%,
-        rgba(8,8,12,.6) 43%,
-        rgba(8,8,12,.28) 100%
-      );
+      background: linear-gradient(to top, #08080c 0%, rgba(8,8,12,.6) 43%, rgba(8,8,12,.28) 100%);
     }
 
     .cover-content {
@@ -366,6 +391,78 @@ import { EventItem, Review } from '../../models/event.model';
 
     .fact strong {
       line-height: 1.5;
+    }
+
+    .lineup-section {
+      margin-top: 34px;
+      padding-bottom: 33px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .lineup-heading span {
+      display: block;
+      margin-bottom: 12px;
+      color: #c26eff;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+    }
+
+    .lineup-heading h2 {
+      margin-bottom: 24px;
+    }
+
+    .lineup-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+    }
+
+    .lineup-artist {
+      width: 112px;
+      display: grid;
+      justify-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .artist-circle {
+      width: 88px;
+      height: 88px;
+      overflow: hidden;
+      border-radius: 50%;
+      border: 2px solid rgba(252,56,172,.38);
+      transition: transform .2s, border-color .2s;
+    }
+
+    .lineup-artist:hover .artist-circle {
+      transform: scale(1.06);
+      border-color: #fc38ac;
+    }
+
+    .artist-circle img {
+      position: static;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .artist-fallback {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #932cff, #fc38ac);
+    }
+
+    .lineup-artist strong {
+      font-size: .92rem;
+    }
+
+    .lineup-artist small {
+      color: #fc38ac;
+      font-size: .76rem;
     }
 
     .description-title {
@@ -769,6 +866,7 @@ export class EventDetailComponent implements OnInit {
     this.reviewService.reportReview(review.id).subscribe({
       next: () => {
         this.reviewSuccess.set('Recensione segnalata all amministratore.');
+
         const currentEvent = this.event();
 
         if (currentEvent) {
