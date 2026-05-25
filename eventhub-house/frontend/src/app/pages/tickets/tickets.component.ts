@@ -13,7 +13,7 @@ import { Ticket } from '../../models/event.model';
     <section class="tickets-page page">
       <div class="container">
         <header class="page-heading">
-          <span class="eyebrow">YOUR PASSES</span>
+          <span class="eyebrow">YOUR PASSES / ACCESS CONTROL</span>
           <h1>I miei <span class="gradient-text">biglietti</span></h1>
           <p>Mostra il QR code all'ingresso dell'evento.</p>
         </header>
@@ -31,15 +31,38 @@ import { Ticket } from '../../models/event.model';
         </p>
 
         <div class="tickets-grid" *ngIf="!loading() && tickets().length > 0">
-          <article class="ticket card" *ngFor="let ticket of tickets()">
-            <div class="ticket-header">
-              <span class="badge">DIGITAL TICKET</span>
+          <article class="ticket card" *ngFor="let ticket of tickets(); let index = index">
+            <div class="ticket-cover">
+              <img
+                *ngIf="ticket.event.image_url; else fallbackCover"
+                [src]="ticket.event.image_url"
+                [alt]="'Locandina ' + ticket.event.title">
 
-              <h2>{{ ticket.event.title }}</h2>
+              <ng-template #fallbackCover>
+                <div class="fallback-cover">
+                  <div class="fallback-orbit"></div>
+                  <span class="fallback-star">✦</span>
+                  <strong>HOUSE</strong>
+                </div>
+              </ng-template>
 
-              <p class="event-place">
-                {{ ticket.event.location }} · {{ ticket.event.city }}
-              </p>
+              <div class="cover-overlay"></div>
+
+              <div class="ticket-cover-top">
+                <span class="badge">DIGITAL TICKET</span>
+                <span class="ticket-number">
+                  {{ formatIndex(index + 1) }} / PASS
+                </span>
+              </div>
+
+              <div class="ticket-title">
+                <h2>{{ ticket.event.title }}</h2>
+                <p>{{ ticket.event.location }} · {{ ticket.event.city }}</p>
+              </div>
+            </div>
+
+            <div class="perforation">
+              <span></span>
             </div>
 
             <div class="ticket-body">
@@ -92,15 +115,23 @@ import { Ticket } from '../../models/event.model';
     </section>
   `,
   styles: [`
+    .tickets-page {
+      min-height: calc(100vh - 82px);
+      background:
+        linear-gradient(180deg, rgba(10, 30, 50, .16), transparent 220px),
+        var(--background);
+    }
+
     .page-heading {
-      margin-bottom: 42px;
+      margin-bottom: 43px;
     }
 
     .eyebrow {
       display: block;
       margin-bottom: 16px;
-      color: #c26eff;
-      font-size: .75rem;
+      color: #298edc;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .62rem;
       font-weight: 700;
       letter-spacing: 3px;
     }
@@ -112,41 +143,161 @@ import { Ticket } from '../../models/event.model';
 
     .page-heading p {
       margin: 0;
-      color: #a4a3b3;
+      color: #839bb0;
       font-size: 1.05rem;
     }
 
     .loading {
-      color: #a4a3b3;
+      color: #839bb0;
       font-size: 1.05rem;
     }
 
     .tickets-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 25px;
+      gap: 26px;
     }
 
     .ticket {
+      position: relative;
       overflow: hidden;
+      border-radius: 3px 28px 3px 3px;
+      border-color: rgba(25, 111, 184, .42);
+      background: #04070b;
+      transition: border-color .2s, transform .2s;
     }
 
-    .ticket-header {
-      padding: 28px;
-      border-bottom: 1px dashed rgba(255,255,255,.16);
+    .ticket:hover {
+      transform: translateY(-3px);
+      border-color: rgba(36, 134, 214, .68);
+    }
+
+    .ticket-cover {
+      position: relative;
+      height: 270px;
+      overflow: hidden;
+      background: #05080d;
+    }
+
+    .ticket-cover > img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      filter: saturate(.88) contrast(1.06);
+    }
+
+    .fallback-cover {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
       background:
-        radial-gradient(circle at 92% 0, rgba(252,56,172,.19), transparent 38%),
-        rgba(255,255,255,.012);
+        radial-gradient(circle at 80% 20%, rgba(16, 100, 178, .18), transparent 34%),
+        #04070c;
     }
 
-    .ticket-header h2 {
-      margin: 19px 0 10px;
-      font-size: 1.55rem;
+    .fallback-orbit {
+      position: absolute;
+      width: 430px;
+      height: 125px;
+      left: 44px;
+      top: 86px;
+      transform: rotate(-18deg);
+      border: 1px solid rgba(30, 126, 205, .5);
+      border-radius: 50%;
     }
 
-    .event-place {
+    .fallback-star {
+      position: absolute;
+      right: 42px;
+      top: 51px;
+      color: #2184d6;
+      font-size: 1.8rem;
+    }
+
+    .fallback-cover strong {
+      position: absolute;
+      left: 30px;
+      bottom: 27px;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: 2rem;
+      letter-spacing: 4px;
+      color: #dbe7f2;
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(2,3,5,.9) 0%, rgba(2,3,5,.4) 43%, rgba(2,3,5,.3)),
+        linear-gradient(to right, rgba(2,3,5,.48), transparent 60%);
+    }
+
+    .ticket-cover-top {
+      position: absolute;
+      z-index: 2;
+      top: 25px;
+      left: 27px;
+      right: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 17px;
+    }
+
+    .ticket-number {
+      color: #4398dc;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .57rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .ticket-title {
+      position: absolute;
+      z-index: 2;
+      left: 28px;
+      right: 28px;
+      bottom: 29px;
+    }
+
+    .ticket-title h2 {
+      margin: 0 0 9px;
+      font-size: clamp(1.4rem, 3vw, 1.75rem);
+      color: #f2f7fd;
+      text-shadow: 0 2px 11px rgba(0,0,0,.55);
+    }
+
+    .ticket-title p {
       margin: 0;
-      color: #a4a3b3;
+      color: #b0c2d2;
+    }
+
+    .perforation {
+      position: relative;
+      height: 1px;
+      border-top: 1px dashed rgba(34, 119, 191, .42);
+    }
+
+    .perforation::before,
+    .perforation::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--background);
+      border: 1px solid rgba(25, 111, 184, .42);
+    }
+
+    .perforation::before {
+      left: -10px;
+    }
+
+    .perforation::after {
+      right: -10px;
     }
 
     .ticket-body {
@@ -154,7 +305,7 @@ import { Ticket } from '../../models/event.model';
       grid-template-columns: 170px minmax(0, 1fr);
       gap: 24px;
       align-items: center;
-      padding: 28px;
+      padding: 30px 28px 27px;
     }
 
     .qr-box {
@@ -162,7 +313,7 @@ import { Ticket } from '../../models/event.model';
       padding: 10px;
       display: grid;
       place-items: center;
-      border-radius: 16px;
+      border-radius: 6px;
       background: white;
     }
 
@@ -179,28 +330,29 @@ import { Ticket } from '../../models/event.model';
 
     .ticket-info span {
       margin-top: 11px;
-      color: #8e8d9d;
-      font-size: .68rem;
+      color: #6685a0;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .56rem;
       font-weight: 700;
       letter-spacing: 2px;
     }
 
     .ticket-info strong {
-      color: white;
+      color: #edf4fb;
       line-height: 1.4;
     }
 
     code {
-      color: #c977ff;
+      color: #4aa4e8;
       overflow-wrap: anywhere;
-      font-size: .86rem;
+      font-size: .85rem;
     }
 
     .ticket-actions {
       display: flex;
       gap: 16px;
       align-items: center;
-      padding: 0 28px 28px;
+      padding: 0 28px 29px;
     }
 
     .ticket-actions .btn {
@@ -211,17 +363,19 @@ import { Ticket } from '../../models/event.model';
 
     .cancel-button {
       border: 0;
-      color: #fc78a8;
+      color: #7896af;
       background: transparent;
       font-weight: 600;
+      transition: color .2s;
     }
 
     .cancel-button:hover {
-      color: white;
+      color: #dcecff;
     }
 
     .empty-state {
       padding: 75px 20px;
+      border-radius: 3px;
     }
 
     .empty-state h2 {
@@ -240,6 +394,10 @@ import { Ticket } from '../../models/event.model';
     }
 
     @media (max-width: 560px) {
+      .ticket-cover {
+        height: 245px;
+      }
+
       .ticket-body {
         grid-template-columns: 1fr;
       }
@@ -325,6 +483,10 @@ export class TicketsComponent implements OnInit {
         );
       }
     });
+  }
+
+  formatIndex(index: number): string {
+    return index.toString().padStart(2, '0');
   }
 
   formatPrice(price: number): string {

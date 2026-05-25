@@ -30,6 +30,8 @@ export interface Ticket {
     city: string;
     location: string;
     price: number;
+    image_filename: string | null;
+    image_url: string | null;
   };
 }
 

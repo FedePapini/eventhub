@@ -19,7 +19,13 @@ def booking_to_dict(booking):
             "date": booking.event.date.isoformat(),
             "city": booking.event.city,
             "location": booking.event.location,
-            "price": booking.event.price
+            "price": booking.event.price,
+            "image_filename": booking.event.image_filename,
+            "image_url": (
+                f"/api/events/images/{booking.event.image_filename}"
+                if booking.event.image_filename
+                else None
+            )
         }
     }
 
