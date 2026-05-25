@@ -19,3 +19,6 @@ frontend/dist/
 # Editor e sistema
 .vscode/
 .DS_Store
+backend/backups/
+backend/certs/
+backend/.env.aiven
