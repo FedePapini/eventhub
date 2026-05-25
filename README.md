@@ -514,6 +514,6 @@ Risultato atteso:
 
 ---
 
-## Autore
+## Autori
 
-Progetto realizzato da **Federico P.**.
+Progetto realizzato da **Federico P. e Christian D.**.
