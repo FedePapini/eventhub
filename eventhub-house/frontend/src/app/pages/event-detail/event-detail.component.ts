@@ -251,18 +251,25 @@ import { EventItem, Review } from '../../models/event.model';
               {{ bookingSuccess() }}
             </p>
 
+            <p class="past-booking-note" *ngIf="isPastEvent(currentEvent.date)">
+              Evento concluso. Puoi visualizzare i dettagli, la lineup e le recensioni,
+              ma le iscrizioni sono chiuse.
+            </p>
+
             <ng-container *ngIf="authService.isLoggedIn(); else loginRequired">
               <button
                 type="button"
                 class="btn btn-primary booking-button"
-                [disabled]="bookingLoading() || currentEvent.available_places === 0"
+                [disabled]="bookingLoading() || currentEvent.available_places === 0 || isPastEvent(currentEvent.date)"
                 (click)="bookEvent()">
                 {{
-                  currentEvent.available_places === 0
-                    ? 'Posti esauriti'
-                    : bookingLoading()
-                      ? 'Prenotazione...'
-                      : 'Prenota ora'
+                  isPastEvent(currentEvent.date)
+                    ? 'Evento concluso'
+                    : currentEvent.available_places === 0
+                      ? 'Posti esauriti'
+                      : bookingLoading()
+                        ? 'Prenotazione...'
+                        : 'Prenota ora'
                 }}
               </button>
 
@@ -498,6 +505,17 @@ import { EventItem, Review } from '../../models/event.model';
 
     .availability strong {
       color: #27e2e9;
+    }
+
+    .past-booking-note {
+      margin: 0 0 20px;
+      padding: 14px 15px;
+      border: 1px solid rgba(112, 136, 157, .38);
+      border-radius: 4px;
+      color: #a8bdcf;
+      background: rgba(91, 112, 131, .1);
+      font-size: .91rem;
+      line-height: 1.55;
     }
 
     .booking-button {
@@ -783,6 +801,10 @@ export class EventDetailComponent implements OnInit {
         this.reviewsLoading.set(false);
       }
     });
+  }
+
+  isPastEvent(date: string): boolean {
+    return new Date(date).getTime() < Date.now();
   }
 
   bookEvent(): void {

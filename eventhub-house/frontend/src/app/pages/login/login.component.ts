@@ -10,8 +10,12 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [ReactiveFormsModule, RouterLink, NgIf],
   template: `
     <section class="auth-page">
+      <div class="auth-frame"></div>
+
       <div class="auth-card card">
-        <span class="eyebrow">WELCOME BACK</span>
+        <div class="corner-label">ACCESS / 01</div>
+
+        <span class="eyebrow">WELCOME BACK / EVENTHUB</span>
 
         <h1>
           Accedi a <span class="gradient-text">EventHub</span>
@@ -23,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
 
         <form [formGroup]="loginForm" (ngSubmit)="submit()">
           <div class="field">
-            <label for="email">Email</label>
+            <label for="email">EMAIL</label>
             <input
               id="email"
               type="email"
@@ -32,12 +36,34 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
 
           <div class="field">
-            <label for="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              placeholder="Inserisci la password">
+            <label for="password">PASSWORD</label>
+
+            <div class="password-field">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Inserisci la password">
+
+              <button
+                class="password-toggle"
+                type="button"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword() ? 'Nascondi password' : 'Mostra password'">
+
+                <svg *ngIf="!showPassword()" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"></path>
+                  <circle cx="12" cy="12" r="3.2"></circle>
+                </svg>
+
+                <svg *ngIf="showPassword()" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18"></path>
+                  <path d="M10.4 6.1A10.6 10.6 0 0 1 12 6c6.1 0 9.5 6 9.5 6a17.1 17.1 0 0 1-3.7 4"></path>
+                  <path d="M6.1 7.7A16.6 16.6 0 0 0 2.5 12s3.4 6 9.5 6c1 0 1.9-.2 2.8-.5"></path>
+                  <path d="M10 10a3.2 3.2 0 0 0 4 4"></path>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <p class="error-message" *ngIf="error()">
@@ -64,27 +90,52 @@ import { AuthService } from '../../core/services/auth.service';
   `,
   styles: [`
     .auth-page {
-      min-height: calc(100vh - 150px);
+      position: relative;
+      min-height: calc(100vh - 82px);
       padding: 58px 18px;
       display: grid;
       place-items: center;
+      overflow: hidden;
       background:
-        radial-gradient(circle at 50% 16%, rgba(147,44,255,.19), transparent 36%),
-        radial-gradient(circle at 75% 72%, rgba(252,56,172,.1), transparent 28%),
-        #08080c;
+        radial-gradient(circle at 50% 18%, rgba(80, 104, 126, .08), transparent 34%),
+        #020305;
+    }
+
+    .auth-frame {
+      position: absolute;
+      width: min(600px, calc(100% - 32px));
+      height: min(680px, calc(100% - 42px));
+      border-left: 1px solid rgba(91, 112, 131, .24);
+      border-right: 1px solid rgba(91, 112, 131, .24);
+      pointer-events: none;
     }
 
     .auth-card {
+      position: relative;
       width: min(475px, 100%);
-      padding: 43px;
-      box-shadow: 0 22px 85px rgba(147,44,255,.13);
+      padding: 45px 43px;
+      border-radius: 3px 27px 3px 3px;
+      border-color: rgba(91, 112, 131, .38);
+      box-shadow: none;
+    }
+
+    .corner-label {
+      position: absolute;
+      right: 24px;
+      top: 20px;
+      color: #718fa8;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .48rem;
+      font-weight: 700;
+      letter-spacing: 2px;
     }
 
     .eyebrow {
       display: block;
-      margin-bottom: 17px;
-      color: #c26eff;
-      font-size: .73rem;
+      margin-bottom: 18px;
+      color: #7899b1;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .59rem;
       font-weight: 700;
       letter-spacing: 3px;
     }
@@ -96,14 +147,58 @@ import { AuthService } from '../../core/services/auth.service';
 
     .subtitle {
       margin: 0 0 34px;
-      color: #9998aa;
+      color: #879eaf;
       line-height: 1.7;
+    }
+
+    .field label {
+      color: #7790a5;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .56rem;
+      letter-spacing: 2px;
+    }
+
+    .password-field {
+      position: relative;
+    }
+
+    .password-field input {
+      padding-right: 54px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      transform: translateY(-50%);
+      border: 0;
+      color: #7e9bae;
+      background: transparent;
+      transition: color .2s;
+    }
+
+    .password-toggle:hover {
+      color: #dce9f3;
+    }
+
+    .password-toggle svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .submit-button {
       width: 100%;
-      margin-top: 10px;
-      border: 0;
+      margin-top: 12px;
+      border-radius: 3px;
     }
 
     .submit-button:disabled {
@@ -114,29 +209,35 @@ import { AuthService } from '../../core/services/auth.service';
 
     .separator {
       position: relative;
-      margin: 34px 0 25px;
+      margin: 35px 0 25px;
       text-align: center;
-      border-top: 1px solid rgba(255,255,255,.09);
+      border-top: 1px solid rgba(91, 112, 131, .29);
     }
 
     .separator span {
       position: relative;
       top: -9px;
       padding: 0 14px;
-      color: #898899;
-      background: #111118;
-      font-size: .67rem;
+      color: #728a9d;
+      background: #070b11;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: .48rem;
       font-weight: 700;
-      letter-spacing: 1.7px;
+      letter-spacing: 2px;
     }
 
     .register-button {
       width: 100%;
+      border-radius: 3px;
     }
 
     @media (max-width: 520px) {
       .auth-card {
-        padding: 28px 23px;
+        padding: 40px 23px 28px;
+      }
+
+      .auth-frame {
+        display: none;
       }
     }
   `]
@@ -144,6 +245,7 @@ import { AuthService } from '../../core/services/auth.service';
 export class LoginComponent {
   loading = signal(false);
   error = signal('');
+  showPassword = signal(false);
 
   loginForm = new FormGroup({
     email: new FormControl('', {
@@ -160,6 +262,10 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  togglePassword(): void {
+    this.showPassword.update((value) => !value);
+  }
 
   submit(): void {
     this.error.set('');

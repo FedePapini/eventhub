@@ -31,7 +31,16 @@ import { Ticket } from '../../models/event.model';
         </p>
 
         <div class="tickets-grid" *ngIf="!loading() && tickets().length > 0">
-          <article class="ticket card" *ngFor="let ticket of tickets(); let index = index">
+          <ng-container *ngFor="let ticket of orderedTickets(); let index = index">
+            <header
+              class="past-section-heading"
+              *ngIf="isPastTicket(ticket) && (index === 0 || !isPastTicket(orderedTickets()[index - 1]))">
+              <span class="eyebrow">ARCHIVE / PAST EVENTS</span>
+              <h2>Biglietti passati</h2>
+              <p>I tuoi accessi agli eventi già conclusi rimangono disponibili qui.</p>
+            </header>
+
+            <article class="ticket card" [class.past-ticket]="isPastTicket(ticket)">
             <div class="ticket-cover">
               <img
                 *ngIf="ticket.event.image_url; else fallbackCover"
@@ -99,7 +108,8 @@ import { Ticket } from '../../models/event.model';
                 Annulla iscrizione
               </button>
             </div>
-          </article>
+            </article>
+          </ng-container>
         </div>
 
         <div
@@ -156,6 +166,36 @@ import { Ticket } from '../../models/event.model';
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 26px;
+    }
+
+    .past-section-heading {
+      grid-column: 1 / -1;
+      margin-top: 46px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(91, 112, 131, .3);
+    }
+
+    .past-section-heading h2 {
+      margin: 0 0 10px;
+      color: #dbe6ef;
+      font-size: clamp(2rem, 4vw, 2.55rem);
+    }
+
+    .past-section-heading p {
+      margin: 0 0 5px;
+      color: #7892a7;
+    }
+
+    .past-ticket {
+      opacity: .76;
+    }
+
+    .past-ticket:hover {
+      opacity: .94;
+    }
+
+    .past-ticket .ticket-cover > img {
+      filter: grayscale(.32) saturate(.62) contrast(1.05);
     }
 
     .ticket {
@@ -482,6 +522,28 @@ export class TicketsComponent implements OnInit {
           error.error?.message || 'Non è stato possibile annullare l iscrizione.'
         );
       }
+    });
+  }
+
+  isPastTicket(ticket: Ticket): boolean {
+    return new Date(ticket.event.date).getTime() < Date.now();
+  }
+
+  orderedTickets(): Ticket[] {
+    return [...this.tickets()].sort((first, second) => {
+      const firstPast = this.isPastTicket(first);
+      const secondPast = this.isPastTicket(second);
+
+      if (firstPast !== secondPast) {
+        return firstPast ? 1 : -1;
+      }
+
+      const firstDate = new Date(first.event.date).getTime();
+      const secondDate = new Date(second.event.date).getTime();
+
+      return firstPast
+        ? secondDate - firstDate
+        : firstDate - secondDate;
     });
   }
 

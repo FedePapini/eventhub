@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
@@ -57,6 +58,11 @@ def book_event(event_id):
 
     if existing_booking:
         return jsonify({"message": "Sei già iscritto a questo evento"}), 409
+
+    if event.date <= datetime.utcnow():
+        return jsonify({
+            "message": "Questo evento è già terminato. Non è più possibile iscriversi."
+        }), 400
 
     if event.available_places <= 0:
         return jsonify({"message": "Posti esauriti"}), 400
