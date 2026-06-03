@@ -9,3 +9,5 @@ Werkzeug==3.0.3
 flasgger==0.9.7.1
 pytest==8.2.2
 PyMySQL[rsa]==1.1.1
+PyJWT[crypto]==2.10.1
+requests==2.32.3

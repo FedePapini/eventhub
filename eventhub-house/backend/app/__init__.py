@@ -16,9 +16,13 @@ def create_app(test_config=None):
     load_dotenv(BASE_DIR / ".env")
 
     aiven_env_file = BASE_DIR / ".env.aiven"
+    keycloak_env_file = BASE_DIR / ".env.keycloak"
 
     if test_config is None and aiven_env_file.exists():
         load_dotenv(aiven_env_file, override=True)
+
+    if test_config is None and keycloak_env_file.exists():
+        load_dotenv(keycloak_env_file, override=True)
 
     app = Flask(__name__)
 

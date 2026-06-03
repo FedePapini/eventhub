@@ -1,89 +1,47 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { NgIf } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgIf],
+  imports: [RouterLink, NgIf],
   template: `
     <section class="auth-page">
       <div class="auth-frame"></div>
 
       <div class="auth-card card">
-        <div class="corner-label">ACCESS / 01</div>
+        <div class="corner-label">SECURE LOGIN</div>
 
-        <span class="eyebrow">WELCOME BACK / EVENTHUB</span>
+        <span class="eyebrow">ACCESSO EVENTHUB</span>
 
         <h1>
           Accedi a <span class="gradient-text">EventHub</span>
         </h1>
 
         <p class="subtitle">
-          Entra nel tuo account per gestire eventi, biglietti e recensioni.
+          Accedi al tuo account per gestire eventi, biglietti e permessi.
         </p>
 
-        <form [formGroup]="loginForm" (ngSubmit)="submit()">
-          <div class="field">
-            <label for="email">EMAIL</label>
-            <input
-              id="email"
-              type="email"
-              formControlName="email"
-              placeholder="nome@email.com">
-          </div>
+        <p class="error-message" *ngIf="error()">
+          {{ error() }}
+        </p>
 
-          <div class="field">
-            <label for="password">PASSWORD</label>
-
-            <div class="password-field">
-              <input
-                id="password"
-                [type]="showPassword() ? 'text' : 'password'"
-                formControlName="password"
-                placeholder="Inserisci la password">
-
-              <button
-                class="password-toggle"
-                type="button"
-                (click)="togglePassword()"
-                [attr.aria-label]="showPassword() ? 'Nascondi password' : 'Mostra password'">
-
-                <svg *ngIf="!showPassword()" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"></path>
-                  <circle cx="12" cy="12" r="3.2"></circle>
-                </svg>
-
-                <svg *ngIf="showPassword()" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M3 3l18 18"></path>
-                  <path d="M10.4 6.1A10.6 10.6 0 0 1 12 6c6.1 0 9.5 6 9.5 6a17.1 17.1 0 0 1-3.7 4"></path>
-                  <path d="M6.1 7.7A16.6 16.6 0 0 0 2.5 12s3.4 6 9.5 6c1 0 1.9-.2 2.8-.5"></path>
-                  <path d="M10 10a3.2 3.2 0 0 0 4 4"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <p class="error-message" *ngIf="error()">
-            {{ error() }}
-          </p>
-
-          <button
-            class="btn btn-primary submit-button"
-            type="submit"
-            [disabled]="loading()">
-            {{ loading() ? 'Accesso in corso...' : 'Accedi' }}
-          </button>
-        </form>
+        <button
+          class="btn btn-primary submit-button"
+          type="button"
+          [disabled]="loading()"
+          (click)="login()">
+          {{ loading() ? 'Accesso in corso...' : 'Accedi' }}
+        </button>
 
         <div class="separator">
-          <span>NON HAI ANCORA UN ACCOUNT?</span>
+          <span>NUOVO ACCOUNT?</span>
         </div>
 
         <a routerLink="/register" class="btn btn-outline register-button">
-          Crea un account
+          Registrati
         </a>
       </div>
     </section>
@@ -151,50 +109,6 @@ import { AuthService } from '../../core/services/auth.service';
       line-height: 1.7;
     }
 
-    .field label {
-      color: #7790a5;
-      font-family: 'Orbitron', Arial, sans-serif;
-      font-size: .56rem;
-      letter-spacing: 2px;
-    }
-
-    .password-field {
-      position: relative;
-    }
-
-    .password-field input {
-      padding-right: 54px;
-    }
-
-    .password-toggle {
-      position: absolute;
-      top: 50%;
-      right: 14px;
-      width: 30px;
-      height: 30px;
-      display: grid;
-      place-items: center;
-      transform: translateY(-50%);
-      border: 0;
-      color: #7e9bae;
-      background: transparent;
-      transition: color .2s;
-    }
-
-    .password-toggle:hover {
-      color: #dce9f3;
-    }
-
-    .password-toggle svg {
-      width: 21px;
-      height: 21px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
     .submit-button {
       width: 100%;
       margin-top: 12px;
@@ -242,63 +156,46 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loading = signal(false);
   error = signal('');
-  showPassword = signal(false);
-
-  loginForm = new FormGroup({
-    email: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.email]
-    }),
-    password: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required]
-    })
-  });
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
-  togglePassword(): void {
-    this.showPassword.update((value) => !value);
+  ngOnInit(): void {
+    if (window.location.search.includes('code=') || window.location.search.includes('session_state=')) {
+      this.login();
+    }
   }
 
-  submit(): void {
+  async login(): Promise<void> {
     this.error.set('');
-
-    if (this.loginForm.invalid) {
-      this.error.set('Inserisci email e password valide.');
-      return;
-    }
-
     this.loading.set(true);
 
-    this.authService.login(this.loginForm.getRawValue()).subscribe({
-      next: (response) => {
-        this.loading.set(false);
+    try {
+      await this.authService.loginWithKeycloak();
 
-        if (response.user.role === 'admin') {
-          this.router.navigate(['/admin']);
-          return;
-        }
+      const user = this.authService.currentUser;
 
-        if (response.user.role === 'organizer') {
-          this.router.navigate(['/organizer']);
-          return;
-        }
-
-        this.router.navigate(['/']);
-      },
-      error: (response) => {
-        this.loading.set(false);
-        this.error.set(
-          response.error?.message || 'Accesso non riuscito.'
-        );
+      if (user?.role === 'admin') {
+        this.router.navigate(['/admin']);
+        return;
       }
-    });
+
+      if (user?.role === 'organizer') {
+        this.router.navigate(['/organizer']);
+        return;
+      }
+
+      this.router.navigate(['/']);
+    } catch (error) {
+      console.error(error);
+      this.error.set('Accesso non riuscito.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 }
