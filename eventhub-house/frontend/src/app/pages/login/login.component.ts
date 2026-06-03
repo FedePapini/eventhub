@@ -165,11 +165,7 @@ export class LoginComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit(): void {
-    if (window.location.search.includes('code=') || window.location.search.includes('session_state=')) {
-      this.login();
-    }
-  }
+  ngOnInit(): void {}
 
   async login(): Promise<void> {
     this.error.set('');
@@ -177,20 +173,6 @@ export class LoginComponent implements OnInit {
 
     try {
       await this.authService.loginWithKeycloak();
-
-      const user = this.authService.currentUser;
-
-      if (user?.role === 'admin') {
-        this.router.navigate(['/admin']);
-        return;
-      }
-
-      if (user?.role === 'organizer') {
-        this.router.navigate(['/organizer']);
-        return;
-      }
-
-      this.router.navigate(['/']);
     } catch (error) {
       console.error(error);
       this.error.set('Accesso non riuscito.');

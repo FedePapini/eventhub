@@ -22,3 +22,4 @@ frontend/dist/
 backend/backups/
 backend/certs/
 backend/.env.aiven
+backend/.env.keycloak

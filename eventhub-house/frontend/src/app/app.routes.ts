@@ -10,6 +10,7 @@ import { EventFormComponent } from './pages/event-form/event-form.component';
 import { ArtistsManagerComponent } from './pages/artists-manager/artists-manager.component';
 import { ArtistDetailComponent } from './pages/artist-detail/artist-detail.component';
 import { AdminComponent } from './pages/admin/admin.component';
+import { AuthCallbackComponent } from './pages/auth-callback/auth-callback.component';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard, organizerGuard } from './core/guards/role.guard';
 
@@ -34,6 +35,12 @@ export const routes: Routes = [
     component: EventDetailComponent,
     title: 'Evento | EventHub House'
   },
+  {
+    path: 'auth/callback',
+    component: AuthCallbackComponent,
+    title: 'Accesso in corso | EventHub House'
+  },
+
   {
     path: 'artisti/:id',
     component: ArtistDetailComponent,
