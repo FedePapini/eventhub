@@ -1,36 +1,43 @@
 from functools import wraps
-from flask import jsonify
-from flask_jwt_extended import verify_jwt_in_request, get_jwt
 from datetime import datetime
-import threading
+from threading import Thread
+
+from flask import jsonify
+from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 
-def role_required(*roles):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
+def role_required(*allowed_roles):
+    def role_decorator(func):
+
+        @wraps(func)
+        def wrapped_function(*args, **kwargs):
             verify_jwt_in_request()
-            claims = get_jwt()
-            role = claims.get("role")
 
-            if role not in roles:
-                return jsonify({"message": "Accesso non autorizzato"}), 403
+            user_role = get_jwt().get("role")
 
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
+            if user_role not in allowed_roles:
+                return jsonify(
+                    {"message": "Accesso non autorizzato"}
+                ), 403
+
+            return func(*args, **kwargs)
+
+        return wrapped_function
+
+    return role_decorator
 
 
-def fake_send_email_async(to_email, subject, body):
-    def task():
+def fake_send_email_async(recipient, subject, message):
+
+    def send():
         print("EMAIL ASINCRONA")
-        print("A:", to_email)
-        print("Oggetto:", subject)
-        print("Testo:", body)
+        print(f"A: {recipient}")
+        print(f"Oggetto: {subject}")
+        print(f"Testo: {message}")
 
-    thread = threading.Thread(target=task)
-    thread.start()
+    Thread(target=send).start()
 
 
 def parse_date(date_string):
-    return datetime.fromisoformat(date_string)
+    parsed_date = datetime.fromisoformat(date_string)
+    return parsed_date
